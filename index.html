@@ -1,44 +1,41 @@
-<DOCTYPE html>
-  <html lang = "en">
-    <head>
-      <meta charset = "UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Music Player</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Player</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Secular+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" 
-    integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" 
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel=stylesheet href="style.css">
-    </head>
-
-    <body>
-      <div class="container">
-        <div class="player">
-          <div class="info">
-            <h2 id="title">Air War</h2>
-            <p id="artist-name">Crystal Castles</p>
-          </div>
-          <div class="player-controls">
-            <button class="control-button" id="shuffle-button"><i class="fas fa-random"></i></button>
-            <button class="control-button" id="previous-button"><i class="fas fa-step-backward"></i></button>
-            <button class="control-button" id="play-pause-button"><i class="fas fa-play"></i></button>
-            <button class="control-button" id="next-button"><i class="fas fa-step-forward"></i></button>
-            <button class="control-button" id="repeat-button"><i class="fas fa-redo"></i></button>
-          </div>
-          <div class="progress-bar">
-            <span id="current-time">0:00</span>
-            <input type="range" id="progress" value="0">
-            <span id="duration">4:12</span>
-          </div>
-          <div class="song-list">
-            <h3>Playlist</h3>
-            <ul id=song-list-items></ul>
-          </div>
-        </div>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div class="container">
+    <div class="music-player">
+      <div class="player-info">
+        <h2 id="song-title">Air War</h2>
+        <p id="artist-name">Crystal Castles</p>
       </div>
+      <div class="player-controls">
+        <button class="control-btn" id="shuffle-btn"><i class="fas fa-random"></i></button>
+        <button class="control-btn" id="prev-btn"><i class="fas fa-step-backward"></i></button>
+        <button class="control-btn" id="play-pause-btn"><i class="fas fa-play"></i></button>
+        <button class="control-btn" id="next-btn"><i class="fas fa-step-forward"></i></button>
+        <button class="control-btn" id="repeat-btn"><i class="fas fa-redo"></i></button>
+      </div>
+      <div class="progress-bar">
+        <span id="current-time">0:00</span>
+        <input type="range" id="progress-slider" value="0">
+        <span id="duration">4:12</span>
+      </div>
+    </div>
+    <div class="song-list">
+      <h3>Song List</h3>
+      <ul id="song-list-items"></ul>
+    </div>
+  </div>
 
-      <script src="script.js"></script>
-    </body>
-  </html>
+  <script src="script.js"></script>
+</body>
+</html>
