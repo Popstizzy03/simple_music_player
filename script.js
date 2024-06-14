@@ -68,7 +68,7 @@ function updateProgressBar() {
 function formatTime(time) {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
-  return ${minutes}:${seconds.toString().padStart(2, '0')};
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function seekSong() {
@@ -79,7 +79,7 @@ function seekSong() {
 function createSongList() {
   songs.forEach((song, index) => {
     const listItem = document.createElement('li');
-    listItem.textContent = ${song.title} - ${song.artist};
+    listItem.textContent = `${song.title} - ${song.artist}`;
     listItem.addEventListener('click', () => {
       currentSongIndex = index;
       updatePlayerInfo();
