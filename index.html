@@ -183,6 +183,80 @@
       cursor: pointer;
     }
 
+    /* Visualizer Styles */
+    .visualizer-container {
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #visualizer-canvas {
+      background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+      border-radius: 10px;
+      border: 2px solid #444;
+      max-width: 100%;
+      height: auto;
+    }
+
+    #visualizer-toggle {
+      font-size: 16px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      background-color: #333;
+      transition: background-color 0.3s ease;
+    }
+
+    #visualizer-toggle:hover {
+      background-color: #555;
+    }
+
+    #visualizer-toggle.active {
+      background-color: #007bff;
+    }
+
+    /* Lyrics Styles */
+    .lyrics-container {
+      margin-top: 20px;
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .lyrics-container h4 {
+      margin: 0 0 10px 0;
+      color: #fff;
+      text-align: center;
+    }
+
+    .lyrics-content {
+      text-align: center;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    .lyrics-content p {
+      margin: 8px 0;
+    }
+
+    .lyrics-line {
+      padding: 5px 0;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .lyrics-line:hover {
+      color: #fff;
+    }
+
+    .lyrics-line.active {
+      color: #007bff;
+      font-weight: bold;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .container {
@@ -204,6 +278,15 @@
       }
       #volume-slider {
         width: 60%;
+      }
+
+      #visualizer-canvas {
+        width: 100%;
+        height: 150px;
+      }
+
+      .lyrics-container {
+        max-height: 150px;
       }
     }
   </style>
@@ -232,6 +315,42 @@
         <i id="volume-icon" class="fas fa-volume-up"></i>
         <input type="range" id="volume-slider" value="100">
       </div>
+      
+      <!-- Audio Visualizer -->
+      <div class="visualizer-container">
+        <canvas id="visualizer-canvas" width="400" height="200"></canvas>
+        <button class="control-btn" id="visualizer-toggle"><i class="fas fa-wave-square"></i></button>
+      </div>
+      
+      <!-- Lyrics Display -->
+      <div class="lyrics-container" id="lyrics-container">
+        <h4>Lyrics</h4>
+        <div class="lyrics-content" id="lyrics-content">
+          <p>Lyrics will appear here when available...</p>
+        </div>
+      </div>
+      
+      <!-- Keyboard Shortcuts Help -->
+      <div class="help-container">
+        <button class="control-btn" id="help-toggle"><i class="fas fa-keyboard"></i></button>
+        <div class="help-content hidden" id="help-content">
+          <h4>Keyboard Shortcuts</h4>
+          <div class="shortcuts-grid">
+            <div class="shortcut-item"><kbd>Space</kbd> Play/Pause</div>
+            <div class="shortcut-item"><kbd>←</kbd> Seek -10s</div>
+            <div class="shortcut-item"><kbd>→</kbd> Seek +10s</div>
+            <div class="shortcut-item"><kbd>↑</kbd> Volume +10</div>
+            <div class="shortcut-item"><kbd>↓</kbd> Volume -10</div>
+            <div class="shortcut-item"><kbd>N</kbd> Next Song</div>
+            <div class="shortcut-item"><kbd>P</kbd> Previous Song</div>
+            <div class="shortcut-item"><kbd>M</kbd> Mute/Unmute</div>
+            <div class="shortcut-item"><kbd>S</kbd> Toggle Shuffle</div>
+            <div class="shortcut-item"><kbd>R</kbd> Toggle Repeat</div>
+            <div class="shortcut-item"><kbd>V</kbd> Toggle Visualizer</div>
+            <div class="shortcut-item"><kbd>H</kbd> Toggle Help</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="song-list">
       <h3>Song List</h3>
@@ -256,8 +375,8 @@
     const volumeIcon = document.getElementById('volume-icon');
 
     const songs = [
-      { title: 'Air War', artist: 'Crystal Castles', file: 'music/1.m4a', cover: 'covers/1.png' },
-      { title: 'Ketamine', artist: 'siouxxie sixxsta', file: 'music/2.m4a', cover: 'covers/2.png' },
+      { title: 'Air War', artist: 'Crystal Castles', file: '1.mp3', cover: 'covers/1.png' },
+      { title: 'Ketamine', artist: 'siouxxie sixxsta', file: '2.mp3', cover: 'covers/2.png' },
       { title: 'Add It Up', artist: 'Nbhd Nick', file: 'music/3.m4a', cover: 'covers/3.jpeg' },
       { title: 'Who Shot Cupid?', artist: 'Juice WRLD', file: 'music/4.mp4', cover: 'covers/4.png' },
       { title: 'Sky', artist: 'Playboi Carti', file: 'music/5.mp3', cover: 'covers/5.png' },
