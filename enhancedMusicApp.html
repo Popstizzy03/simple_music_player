@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Music Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" >
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#5D5CDE',
+            'primary-dark': '#4a49c8',
+            dark: {
+              bg: '#181818',
+              card: '#222',
+              secondary: '#2d2d2d',
+              hover: '#444'
+            },
+            light: {
+              bg: '#FFFFFF',
+              card: '#f5f5f5',
+              secondary: '#f8f8f8',
+              hover: '#e8e8e8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #5D5CDE;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4a49c8;
+    }
+
+    /* Custom range slider styles */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-track {
+      background: #555;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .dark input[type="range"]::-webkit-slider-track {
+      background: #555;
+    }
+
+    input[type="range"]::-webkit-slider-track {
+      background: #ddd;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #5D5CDE;
+      border-radius: 50%;
+      margin-top: -5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      transition: all 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    input[type="range"]::-moz-range-track {
+      background: #555;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #5D5CDE;
+      border-radius: 50%;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Spinning animation for album cover */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 20s linear infinite;
+    }
+
+    /* Smooth transitions */
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Gradient background for visualizer bars */
+    .visualizer-bar {
+      background: linear-gradient(to top, #5D5CDE, #8b87ff);
+    }
+
+    /* Pulse animation for playing song */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-white min-h-screen font-sans">
+  <div class="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6 md:mb-8">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
+          <i class="fas fa-music text-white text-lg md:text-xl"></i>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-bold">MusicFlow</h1>
+      </div>
+      <button id="theme-toggle" class="p-2 md:p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-secondary transition-colors">
+        <i class="fas fa-moon text-lg md:text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <!-- Left Column: Player + Visualizer -->
+      <div class="lg:col-span-2 space-y-4 md:space-y-6">
+        <!-- Main Player Card -->
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-xl p-6 md:p-8">
+          <!-- Album Art & Info -->
+          <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+            <!-- Album Cover -->
+            <div class="flex-shrink-0">
+              <div class="relative">
+                <img id="song-cover" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjNDQ0Ii8+CjxwYXRoIGQ9Ik0xMDAgNTBDODEuNTkwNCA1MCA2Ni42NjY3IDY0LjkyNDEgNjYuNjY2NyA4M1YxMTdDNjYuNjY2NyAxMzUuMDc2IDgxLjU5MDQgMTUwIDEwMCAxNTBDMTE4LjQxIDE1MCAxMzMuMzMzIDEzNS4wNzYgMTMzLjMzMyAxMTdWODNDMTMzLjMzMyA2NC45MjQxIDExOC40MSA1MCAxMDAgNTBaTTEwMCA2NUMxMTcuNjc2IDY1IDEyMC43NjIgNzcuMDQ3NiAxMjAgODBIODBDNzkuMjM4MSA3Ny4wNDc2IDgyLjMyMzggNjUgMTAwIDY1WiIgZmlsbD0iIzVENUNERSIvPgo8L3N2Zz4K"
+                  alt="Album Cover"
+                  class="w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-2xl shadow-2xl object-cover">
+                <div id="playing-indicator" class="hidden absolute -bottom-2 -right-2 bg-primary text-white rounded-full p-3 shadow-lg pulse">
+                  <i class="fas fa-play text-xs"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Song Info -->
+            <div class="flex-1 text-center md:text-left w-full">
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Now Playing</p>
+              <h2 id="song-title" class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 truncate">Select a song</h2>
+              <p id="artist-name" class="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6">No artist</p>
+
+              <!-- Additional Info Pills -->
+              <div class="flex flex-wrap gap-2 justify-center md:justify-start mb-6">
+                <span class="px-3 py-1 bg-gray-200 dark:bg-dark-secondary rounded-full text-xs md:text-sm">
+                  <i class="fas fa-clock mr-1"></i>
+                  <span id="song-duration-pill">3:45</span>
+                </span>
+                <span id="quality-badge" class="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs md:text-sm font-semibold">
+                  <i class="fas fa-signal mr-1"></i>HD
+                </span>
+              </div>
+
+              <!-- Equalizer Visualization -->
+              <div id="visualizer" class="flex items-end justify-center md:justify-start h-16 md:h-20 gap-1 mb-6"></div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="mt-6 md:mt-8">
+            <div class="flex items-center justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
+              <span id="current-time" class="font-mono">0:00</span>
+              <span id="duration" class="font-mono">0:00</span>
+            </div>
+            <input type="range" id="progress-slider" value="0" class="w-full">
+          </div>
+
+          <!-- Player Controls -->
+          <div class="flex items-center justify-center space-x-3 md:space-x-6 mt-6 md:mt-8">
+            <button id="shuffle-btn" class="p-2 md:p-3 rounded-full hover:bg-gray-200 dark:hover:bg-dark-secondary transition-all text-gray-600 dark:text-gray-400 hover:text-primary">
+              <i class="fas fa-random text-base md:text-lg"></i>
+            </button>
+            <button id="prev-btn" class="p-3 md:p-4 rounded-full hover:bg-gray-200 dark:hover:bg-dark-secondary transition-all hover:scale-110">
+              <i class="fas fa-step-backward text-lg md:text-xl"></i>
+            </button>
+            <button id="play-pause-btn" class="p-4 md:p-6 bg-primary hover:bg-primary-dark rounded-full transition-all hover:scale-110 shadow-lg">
+              <i class="fas fa-play text-xl md:text-2xl text-white"></i>
+            </button>
+            <button id="next-btn" class="p-3 md:p-4 rounded-full hover:bg-gray-200 dark:hover:bg-dark-secondary transition-all hover:scale-110">
+              <i class="fas fa-step-forward text-lg md:text-xl"></i>
+            </button>
+            <button id="repeat-btn" class="p-2 md:p-3 rounded-full hover:bg-gray-200 dark:hover:bg-dark-secondary transition-all text-gray-600 dark:text-gray-400 hover:text-primary">
+              <i class="fas fa-redo text-base md:text-lg"></i>
+            </button>
+          </div>
+
+          <!-- Volume Control -->
+          <div class="flex items-center justify-center space-x-4 mt-6 md:mt-8">
+            <button id="volume-icon" class="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
+              <i class="fas fa-volume-up text-lg md:text-xl"></i>
+            </button>
+            <input type="range" id="volume-slider" value="100" class="w-48 md:w-64">
+            <span id="volume-percentage" class="text-sm text-gray-500 dark:text-gray-400 w-10 text-right">100%</span>
+          </div>
+        </div>
+
+        <!-- Queue Section (Mobile/Tablet below player, Desktop on right) -->
+        <div class="lg:hidden bg-white dark:bg-dark-card rounded-2xl shadow-xl p-4 md:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg md:text-xl font-bold flex items-center">
+              <i class="fas fa-list-ul mr-2 text-primary"></i>
+              Up Next
+            </h3>
+            <button id="clear-queue-mobile" class="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <i class="fas fa-trash mr-1"></i>Clear
+            </button>
+          </div>
+          <div id="queue-list-mobile" class="space-y-2 max-h-64 overflow-y-auto">
+            <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Queue is empty</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Library + Queue (Desktop only) -->
+      <div class="space-y-4 md:space-y-6">
+        <!-- Search & Filter -->
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-xl p-4 md:p-6">
+          <div class="relative mb-4">
+            <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search songs or artists..."
+              class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-dark-secondary rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              autocomplete="off">
+          </div>
+
+          <div class="flex gap-2">
+            <button class="filter-tab active flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-filter="all">
+              All Songs
+            </button>
+            <button class="filter-tab flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-filter="favorites">
+              <i class="fas fa-heart mr-1"></i>Favorites
+            </button>
+          </div>
+        </div>
+
+        <!-- Song List -->
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-xl p-4 md:p-6">
+          <h3 class="text-lg md:text-xl font-bold mb-4 flex items-center justify-between">
+            <span>
+              <i class="fas fa-compact-disc mr-2 text-primary"></i>
+              Library
+            </span>
+            <span id="song-count" class="text-sm text-gray-500 dark:text-gray-400 font-normal">0 songs</span>
+          </h3>
+          <ul id="song-list-items" class="space-y-2 max-h-96 md:max-h-[500px] overflow-y-auto"></ul>
+          <div id="no-results" class="hidden text-center py-8">
+            <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <p class="text-gray-500 dark:text-gray-400">No songs found</p>
+          </div>
+        </div>
+
+        <!-- Queue Section (Desktop only) -->
+        <div class="hidden lg:block bg-white dark:bg-dark-card rounded-2xl shadow-xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold flex items-center">
+              <i class="fas fa-list-ul mr-2 text-primary"></i>
+              Up Next
+            </h3>
+            <button id="clear-queue" class="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <i class="fas fa-trash mr-1"></i>Clear
+            </button>
+          </div>
+          <div id="queue-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Queue is empty</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Info -->
+    <div class="mt-6 md:mt-8 bg-white dark:bg-dark-card rounded-2xl shadow-xl p-4 md:p-6">
+      <div class="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-xs md:text-sm text-gray-600 dark:text-gray-400">
+        <div class="flex items-center space-x-2">
+          <kbd class="px-2 py-1 bg-gray-200 dark:bg-dark-secondary rounded text-xs">Space</kbd>
+          <span>Play/Pause</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <kbd class="px-2 py-1 bg-gray-200 dark:bg-dark-secondary rounded text-xs">← →</kbd>
+          <span>Seek</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <kbd class="px-2 py-1 bg-gray-200 dark:bg-dark-secondary rounded text-xs">↑ ↓</kbd>
+          <span>Volume</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <kbd class="px-2 py-1 bg-gray-200 dark:bg-dark-secondary rounded text-xs">S</kbd>
+          <span>Shuffle</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <kbd class="px-2 py-1 bg-gray-200 dark:bg-dark-secondary rounded text-xs">R</kbd>
+          <span>Repeat</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize dark mode based on system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      if (event.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    });
+
+    // DOM Elements
+    const songTitle = document.getElementById('song-title');
+    const artistName = document.getElementById('artist-name');
+    const songCover = document.getElementById('song-cover');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const progressSlider = document.getElementById('progress-slider');
+    const currentTime = document.getElementById('current-time');
+    const duration = document.getElementById('duration');
+    const songListItems = document.getElementById('song-list-items');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const repeatBtn = document.getElementById('repeat-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeIcon = document.getElementById('volume-icon');
+    const volumePercentage = document.getElementById('volume-percentage');
+    const searchInput = document.getElementById('search-input');
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const noResults = document.getElementById('no-results');
+    const themeToggle = document.getElementById('theme-toggle');
+    const visualizer = document.getElementById('visualizer');
+    const playingIndicator = document.getElementById('playing-indicator');
+    const songCount = document.getElementById('song-count');
+    const queueList = document.getElementById('queue-list');
+    const queueListMobile = document.getElementById('queue-list-mobile');
+    const clearQueue = document.getElementById('clear-queue');
+    const clearQueueMobile = document.getElementById('clear-queue-mobile');
+
+    // Song data
+    const songs = [
+      { title: 'Air War', artist: 'Crystal Castles', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnMSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2ZmNm9iNDtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmZjNlODU7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzEpIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI0MCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMyIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMjUiIGZpbGw9IndoaXRlIi8+PC9zdmc+', duration: 225 },
+      { title: 'Ketamine', artist: 'siouxxie sixxsta', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnMiIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzliNTliNjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2NzNhYjc7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzIpIi8+PHBhdGggZD0iTTEwMCA0MEwxMjAgODBIODBMMTAwIDQwWiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNMTAwIDE2MEwxMjAgMTIwSDgwTDEwMCAxNjBaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==', duration: 198 },
+      { title: 'Add It Up', artist: 'Nbhd Nick', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnMyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzQwZDhmMjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMGJjZDQ7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzMpIi8+PHJlY3QgeD0iNDAiIHk9Ijc1IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjUwIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC40Ii8+PHJlY3QgeD0iNjAiIHk9Ijg1IiB3aWR0aD0iODAiIGhlaWdodD0iMzAiIGZpbGw9IndoaXRlIi8+PC9zdmc+', duration: 182 },
+      { title: 'Who Shot Cupid?', artist: 'Juice WRLD', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnNCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2ZmNDc1NztzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNlZjQ0NDQ7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzQpIi8+PHBhdGggZD0iTTEwMCA1MEwxMTUgODVIODVMMTAwIDUwWiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNMTAwIDE1MEwxMTUgMTE1SDg1TDEwMCAxNTBaIiBmaWxsPSJ3aGl0ZSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=', duration: 214 },
+      { title: 'Sky', artist: 'Playboi Carti', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnNSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc0YjlmZjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMyMTk2ZjM7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzUpIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iMTUiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iMTQwIiBjeT0iMTAwIiByPSIxMiIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjE0MCIgcj0iMTAiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iMTYwIiBjeT0iNTAiIHI9IjgiIGZpbGw9IndoaXRlIi8+PC9zdmc+', duration: 191 },
+      { title: 'Pain', artist: 'Pain Guy', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnNiIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzMzMztzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxYTFhMWE7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzYpIi8+PHBhdGggZD0iTTEwMCA1MEwxMjAgMTAwTDEwMCAxNTBMODAgMTAwTDEwMCA1MFoiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz48L3N2Zz4=', duration: 203 },
+      { title: 'Neon Lights', artist: 'Synthwave Dreams', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnNyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2ZmMDA4ODtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3R5bGU9InN0b3AtY29sb3I6IzAwZmZmZjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmZjAwZmY7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzcpIi8+PGxpbmUgeDE9IjIwIiB5MT0iNTAiIHgyPSIxODAiIHkyPSI1MCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIi8+PGxpbmUgeDE9IjIwIiB5MT0iMTAwIiB4Mj0iMTgwIiB5Mj0iMTAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiLz48bGluZSB4MT0iMjAiIHkxPSIxNTAiIHgyPSIxODAiIHkyPSIxNTAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==', duration: 245 },
+      { title: 'Midnight Drive', artist: 'RetroWave', file: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+j2zX8qBSJ3yO/eizEIHm/A7+OZSAMSE', cover: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnOCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzJlMzE5MjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwZjBjMjk7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9InVybCgjZzgpIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iNjAiIHI9IjMwIiBmaWxsPSIjZmZkNzAwIiBvcGFjaXR5PSIwLjYiLz48cmVjdCB4PSIyMCIgeT0iMTIwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjQiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjUiLz48cmVjdCB4PSI0MCIgeT0iMTQwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjMiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz48L3N2Zz4=', duration: 267 }
+    ];
+
+    // Player state
+    let currentSongIndex = 0;
+    let audioPlayer = new Audio();
+    let isPlaying = false;
+    let isShuffled = false;
+    let isRepeated = false;
+    let currentFilter = 'all';
+    let favorites = [];
+    let queue = [];
+    let audioContext;
+    let analyser;
+    let dataArray;
+    let visualizerBars = [];
+    let savedTheme = null;
+
+    // Initialize visualizer
+    function initializeVisualizer() {
+      const barCount = window.innerWidth < 768 ? 16 : 24;
+      for (let i = 0; i < barCount; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'w-1 md:w-1.5 bg-gradient-to-t from-primary to-purple-400 rounded-full transition-all duration-100';
+        bar.style.height = '4px';
+        visualizer.appendChild(bar);
+        visualizerBars.push(bar);
+      }
+    }
+
+    // Setup audio analysis
+    function setupAudioAnalysis() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaElementSource(audioPlayer);
+        analyser = audioContext.createAnalyser();
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        analyser.fftSize = 64;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+      }
+    }
+
+    // Update visualizer
+    function updateVisualizer() {
+      if (!analyser || !isPlaying) {
+        visualizerBars.forEach(bar => bar.style.height = '4px');
+        return;
+      }
+
+      analyser.getByteFrequencyData(dataArray);
+
+      visualizerBars.forEach((bar, index) => {
+        const value = dataArray[Math.floor(index * dataArray.length / visualizerBars.length)];
+        const height = Math.max(4, (value / 255) * (window.innerWidth < 768 ? 48 : 64));
+        bar.style.height = height + 'px';
+      });
+
+      if (isPlaying) {
+        requestAnimationFrame(updateVisualizer);
+      }
+    }
+
+    // Theme toggle functionality
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      themeToggle.innerHTML = isDark ? '<i class="fas fa-moon text-lg md:text-xl"></i>' : '<i class="fas fa-sun text-lg md:text-xl"></i>';
+      savedTheme = isDark ? 'dark' : 'light';
+    }
+
+    // Load saved theme
+    function loadTheme() {
+      if (savedTheme) {
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          themeToggle.innerHTML = '<i class="fas fa-moon text-lg md:text-xl"></i>';
+        } else {
+          document.documentElement.classList.remove('dark');
+          themeToggle.innerHTML = '<i class="fas fa-sun text-lg md:text-xl"></i>';
+        }
+      }
+    }
+
+    // Format time
+    function formatTime(time) {
+      if (isNaN(time)) return '0:00';
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Update player information
+    function updatePlayerInfo() {
+      const currentSong = songs[currentSongIndex];
+      songTitle.textContent = currentSong.title;
+      artistName.textContent = currentSong.artist;
+      songCover.src = currentSong.cover;
+      audioPlayer.src = currentSong.file;
+      document.getElementById('song-duration-pill').textContent = formatTime(currentSong.duration);
+      updateCurrentSongHighlight();
+    }
+
+    // Play song
+    function playSong() {
+      setupAudioAnalysis();
+      audioPlayer.play().then(() => {
+        isPlaying = true;
+        playPauseBtn.innerHTML = '<i class="fas fa-pause text-xl md:text-2xl text-white"></i>';
+        songCover.classList.add('spinning');
+        playingIndicator.classList.remove('hidden');
+        updateVisualizer();
+      }).catch(e => console.log('Play failed:', e));
+    }
+
+    // Pause song
+    function pauseSong() {
+      audioPlayer.pause();
+      isPlaying = false;
+      playPauseBtn.innerHTML = '<i class="fas fa-play text-xl md:text-2xl text-white"></i>';
+      songCover.classList.remove('spinning');
+      playingIndicator.classList.add('hidden');
+    }
+
+    // Toggle play/pause
+    function togglePlayPause() {
+      isPlaying ? pauseSong() : playSong();
+    }
+
+    // Previous song
+    function prevSong() {
+      currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+      updatePlayerInfo();
+      if (isPlaying) playSong();
+    }
+
+    // Next song
+    function nextSong() {
+      if (queue.length > 0) {
+        currentSongIndex = queue.shift();
+        updateQueue();
+      } else if (isShuffled) {
+        currentSongIndex = Math.floor(Math.random() * songs.length);
+      } else {
+        currentSongIndex = (currentSongIndex + 1) % songs.length;
+      }
+      updatePlayerInfo();
+      if (isPlaying) playSong();
+    }
+
+    // Update progress bar
+    function updateProgressBar() {
+      const currentTimeValue = audioPlayer.currentTime;
+      const durationValue = audioPlayer.duration;
+
+      if (!isNaN(durationValue)) {
+        const progress = (currentTimeValue / durationValue) * 100;
+        progressSlider.value = progress;
+
+        currentTime.textContent = formatTime(currentTimeValue);
+        duration.textContent = formatTime(durationValue);
+      }
+    }
+
+    // Seek song
+    function seekSong() {
+      const seekTime = (progressSlider.value / 100) * audioPlayer.duration;
+      audioPlayer.currentTime = seekTime;
+    }
+
+    // Toggle shuffle
+    function toggleShuffle() {
+      isShuffled = !isShuffled;
+      shuffleBtn.classList.toggle('text-primary', isShuffled);
+      shuffleBtn.classList.toggle('text-gray-600', !isShuffled);
+      shuffleBtn.classList.toggle('dark:text-gray-400', !isShuffled);
+    }
+
+    // Toggle repeat
+    function toggleRepeat() {
+      isRepeated = !isRepeated;
+      repeatBtn.classList.toggle('text-primary', isRepeated);
+      repeatBtn.classList.toggle('text-gray-600', !isRepeated);
+      repeatBtn.classList.toggle('dark:text-gray-400', !isRepeated);
+    }
+
+    // Volume control
+    function setVolume() {
+      audioPlayer.volume = volumeSlider.value / 100;
+      volumePercentage.textContent = volumeSlider.value + '%';
+      updateVolumeIcon();
+    }
+
+    // Update volume icon
+    function updateVolumeIcon() {
+      const volume = audioPlayer.volume;
+      const iconClass = volume === 0 ? 'fa-volume-mute' :
+                        volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up';
+      volumeIcon.innerHTML = `<i class="fas ${iconClass} text-lg md:text-xl"></i>`;
+    }
+
+    // Toggle mute
+    function toggleMute() {
+      if (audioPlayer.volume > 0) {
+        audioPlayer.dataset.previousVolume = audioPlayer.volume;
+        audioPlayer.volume = 0;
+        volumeSlider.value = 0;
+      } else {
+        const previousVolume = audioPlayer.dataset.previousVolume || 1;
+        audioPlayer.volume = previousVolume;
+        volumeSlider.value = previousVolume * 100;
+      }
+      volumePercentage.textContent = volumeSlider.value + '%';
+      updateVolumeIcon();
+    }
+
+    // Toggle favorite
+    function toggleFavorite(songIndex, event) {
+      event.stopPropagation();
+      const songId = `${songs[songIndex].title}-${songs[songIndex].artist}`;
+
+      if (favorites.includes(songId)) {
+        favorites = favorites.filter(id => id !== songId);
+      } else {
+        favorites.push(songId);
+      }
+
+      renderSongList();
+    }
+
+    // Check if song is favorite
+    function isFavorite(songIndex) {
+      const songId = `${songs[songIndex].title}-${songs[songIndex].artist}`;
+      return favorites.includes(songId);
+    }
+
+    // Add to queue
+    function addToQueue(songIndex, event) {
+      event.stopPropagation();
+      if (!queue.includes(songIndex)) {
+        queue.push(songIndex);
+        updateQueue();
+      }
+    }
+
+    // Update queue display
+    function updateQueue() {
+      const queueHTML = queue.length === 0
+        ? '<p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Queue is empty</p>'
+        : queue.map((songIndex, queueIndex) => {
+            const song = songs[songIndex];
+            return `
+              <div class="flex items-center justify-between p-3 bg-gray-100 dark:bg-dark-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors">
+                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">${queueIndex + 1}</span>
+                  <img src="${song.cover}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" alt="${song.title}">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium truncate">${song.title}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${song.artist}</p>
+                  </div>
+                </div>
+                <button onclick="removeFromQueue(${queueIndex})" class="ml-2 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            `;
+          }).join('');
+
+      queueList.innerHTML = queueHTML;
+      queueListMobile.innerHTML = queueHTML;
+    }
+
+    // Remove from queue
+    function removeFromQueue(queueIndex) {
+      queue.splice(queueIndex, 1);
+      updateQueue();
+    }
+
+    // Clear queue
+    function clearQueueFunc() {
+      queue = [];
+      updateQueue();
+    }
+
+    // Update current song highlight
+    function updateCurrentSongHighlight() {
+      const songItems = document.querySelectorAll('.song-list-item');
+      songItems.forEach((item, index) => {
+        const originalIndex = parseInt(item.dataset.index);
+        item.classList.toggle('bg-primary', originalIndex === currentSongIndex);
+        item.classList.toggle('text-white', originalIndex === currentSongIndex);
+        item.classList.toggle('bg-gray-100', originalIndex !== currentSongIndex);
+        item.classList.toggle('dark:bg-dark-secondary', originalIndex !== currentSongIndex);
+      });
+    }
+
+    // Filter songs
+    function getFilteredSongs() {
+      if (currentFilter === 'favorites') {
+        return songs.filter((_, index) => isFavorite(index));
+      }
+      return songs;
+    }
+
+    // Search songs
+    function searchSongs(query) {
+      const filtered = getFilteredSongs();
+      if (!query) return filtered;
+
+      return filtered.filter(song =>
+        song.title.toLowerCase().includes(query.toLowerCase()) ||
+        song.artist.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    // Render song list
+    function renderSongList() {
+      const query = searchInput.value;
+      const filteredSongs = searchSongs(query);
+
+      songListItems.innerHTML = '';
+
+      if (filteredSongs.length === 0) {
+        noResults.classList.remove('hidden');
+        songCount.textContent = '0 songs';
+        return;
+      }
+
+      noResults.classList.add('hidden');
+      songCount.textContent = `${filteredSongs.length} song${filteredSongs.length !== 1 ? 's' : ''}`;
+
+      filteredSongs.forEach(song => {
+        const originalIndex = songs.findIndex(s => s === song);
+        const listItem = document.createElement('li');
+        listItem.className = 'song-list-item p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.02] group';
+        listItem.dataset.index = originalIndex;
+
+        listItem.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 flex-1 min-w-0">
+              <img src="${song.cover}" class="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover flex-shrink-0 shadow-md" alt="${song.title}">
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold truncate text-sm md:text-base">${song.title}</p>
+                <p class="text-xs md:text-sm opacity-80 truncate">${song.artist}</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 ml-2 flex-shrink-0">
+              <button class="add-queue-btn p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" onclick="addToQueue(${originalIndex}, event)" title="Add to queue">
+                <i class="fas fa-plus text-sm"></i>
+              </button>
+              <button class="favorite-btn p-2 transition-colors ${isFavorite(originalIndex) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}" onclick="toggleFavorite(${originalIndex}, event)">
+                <i class="fas fa-heart text-sm"></i>
+              </button>
+              <span class="text-xs opacity-60 w-12 text-right">${formatTime(song.duration)}</span>
+            </div>
+          </div>
+        `;
+
+        listItem.addEventListener('click', (e) => {
+          if (!e.target.closest('button')) {
+            currentSongIndex = originalIndex;
+            updatePlayerInfo();
+            playSong();
+          }
+        });
+
+        songListItems.appendChild(listItem);
+      });
+
+      updateCurrentSongHighlight();
+    }
+
+    // Handle filter tabs
+    function handleFilterTab(event) {
+      filterTabs.forEach(tab => {
+        tab.classList.remove('active', 'bg-primary', 'text-white');
+        tab.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-200', 'dark:hover:bg-dark-secondary');
+      });
+      event.target.classList.add('active', 'bg-primary', 'text-white');
+      event.target.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-200', 'dark:hover:bg-dark-secondary');
+      currentFilter = event.target.dataset.filter;
+      renderSongList();
+    }
+
+    // Keyboard shortcuts
+    function handleKeydown(event) {
+      if (event.target === searchInput) return;
+
+      switch(event.code) {
+        case 'Space':
+          event.preventDefault();
+          togglePlayPause();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 10);
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          volumeSlider.value = Math.min(100, parseInt(volumeSlider.value) + 10);
+          setVolume();
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          volumeSlider.value = Math.max(0, parseInt(volumeSlider.value) - 10);
+          setVolume();
+          break;
+        case 'KeyS':
+          event.preventDefault();
+          toggleShuffle();
+          break;
+        case 'KeyR':
+          event.preventDefault();
+          toggleRepeat();
+          break;
+        case 'KeyN':
+          event.preventDefault();
+          nextSong();
+          break;
+        case 'KeyP':
+          event.preventDefault();
+          prevSong();
+          break;
+      }
+    }
+
+    // Event listeners
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    prevBtn.addEventListener('click', prevSong);
+    nextBtn.addEventListener('click', nextSong);
+    progressSlider.addEventListener('input', seekSong);
+    audioPlayer.addEventListener('timeupdate', updateProgressBar);
+    shuffleBtn.addEventListener('click', toggleShuffle);
+    repeatBtn.addEventListener('click', toggleRepeat);
+    volumeSlider.addEventListener('input', setVolume);
+    volumeIcon.addEventListener('click', toggleMute);
+    themeToggle.addEventListener('click', toggleTheme);
+    searchInput.addEventListener('input', renderSongList);
+    filterTabs.forEach(tab => tab.addEventListener('click', handleFilterTab));
+    document.addEventListener('keydown', handleKeydown);
+    clearQueue.addEventListener('click', clearQueueFunc);
+    clearQueueMobile.addEventListener('click', clearQueueFunc);
+
+    // Handle song end
+    audioPlayer.addEventListener('ended', () => {
+      if (isRepeated) {
+        playSong();
+      } else {
+        nextSong();
+      }
+    });
+
+    // Make functions global for onclick handlers
+    window.toggleFavorite = toggleFavorite;
+    window.addToQueue = addToQueue;
+    window.removeFromQueue = removeFromQueue;
+
+    // Initialization
+    initializeVisualizer();
+    loadTheme();
+    updatePlayerInfo();
+    renderSongList();
+    setVolume();
+    updateQueue();
+  </script>
+</body>
+</html>
