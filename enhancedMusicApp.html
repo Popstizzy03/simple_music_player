@@ -506,6 +506,89 @@
       font-size: 14px;
     }
 
+    /* File Upload Section */
+    .upload-section {
+      margin-bottom: 20px;
+    }
+
+    .upload-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .upload-btn, .folder-btn {
+      flex: 1;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .folder-btn {
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-orange));
+    }
+
+    .upload-btn:hover, .folder-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 243, 255, 0.4);
+    }
+
+    .folder-btn:hover {
+      box-shadow: 0 10px 30px rgba(255, 0, 110, 0.4);
+    }
+
+    .drop-zone {
+      border: 2px dashed rgba(0, 243, 255, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: rgba(0, 243, 255, 0.05);
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+    }
+
+    .drop-zone i {
+      font-size: 40px;
+      color: var(--neon-cyan);
+      margin-bottom: 10px;
+    }
+
+    .drop-zone p {
+      color: #999;
+      font-size: 14px;
+    }
+
+    .drop-zone p.main {
+      color: var(--neon-cyan);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .light .drop-zone p {
+      color: #666;
+    }
+
+    .light .drop-zone p.main {
+      color: #1a1a1a;
+    }
+
     .search-box {
       position: relative;
       margin-bottom: 20px;
@@ -619,6 +702,21 @@
       color: #666;
     }
 
+    .song-item-delete {
+      padding: 8px;
+      background: transparent;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .song-item-delete:hover {
+      background: rgba(255, 0, 110, 0.2);
+      color: var(--neon-pink);
+    }
+
     /* Keyboard shortcuts */
     .shortcuts {
       margin-top: 30px;
@@ -655,10 +753,22 @@
       background: var(--light-secondary);
     }
 
-    .loading {
+    .empty-state {
       text-align: center;
-      padding: 20px;
+      padding: 40px 20px;
       color: #666;
+    }
+
+    .empty-state i {
+      font-size: 60px;
+      color: var(--neon-cyan);
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -693,8 +803,8 @@
           <!-- Song Info -->
           <div class="song-info">
             <p class="now-playing">NOW PLAYING</p>
-            <h2 class="song-title" id="song-title">Select a song</h2>
-            <p class="artist-name" id="artist-name">No artist</p>
+            <h2 class="song-title" id="song-title">No songs loaded</h2>
+            <p class="artist-name" id="artist-name">Add songs to get started</p>
 
             <!-- Visualizer -->
             <div class="visualizer" id="visualizer"></div>
@@ -751,12 +861,36 @@
           <h3>LIBRARY</h3>
           <span class="song-count" id="song-count">0 songs</span>
         </div>
+
+        <!-- File Upload Section -->
+        <div class="upload-section">
+          <div class="upload-buttons">
+            <button class="upload-btn" id="upload-btn">
+              <i class="fas fa-file-audio"></i>
+              Add Files
+            </button>
+            <button class="folder-btn" id="folder-btn">
+              <i class="fas fa-folder-open"></i>
+              Add Folder
+            </button>
+          </div>
+          <div class="drop-zone" id="drop-zone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p class="main">Drop audio files here</p>
+            <p>or click to browse</p>
+          </div>
+        </div>
+
         <div class="search-box">
           <i class="fas fa-search"></i>
           <input type="text" class="search-input" id="search-input" placeholder="Search songs..." autocomplete="off">
         </div>
         <div class="song-list" id="song-list">
-          <div class="loading">Loading songs...</div>
+          <div class="empty-state">
+            <i class="fas fa-music"></i>
+            <p>No songs in library</p>
+            <p style="font-size: 14px;">Add audio files to get started</p>
+          </div>
         </div>
       </div>
     </div>
@@ -786,6 +920,10 @@
     </div>
   </div>
 
+  <!-- Hidden file inputs -->
+  <input type="file" id="file-input" accept="audio/*" multiple style="display: none;">
+  <input type="file" id="folder-input" webkitdirectory directory multiple style="display: none;">
+
   <script>
     // Theme handling
     const themeToggle = document.getElementById('theme-toggle');
@@ -793,8 +931,10 @@
 
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       body.classList.remove('light');
+      themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
     } else {
       body.classList.add('light');
+      themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
     }
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
@@ -833,6 +973,11 @@
     const songList = document.getElementById('song-list');
     const searchInput = document.getElementById('search-input');
     const songCount = document.getElementById('song-count');
+    const uploadBtn = document.getElementById('upload-btn');
+    const folderBtn = document.getElementById('folder-btn');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const folderInput = document.getElementById('folder-input');
 
     // Canvas trails
     const progressTrail = document.getElementById('progress-trail');
@@ -899,50 +1044,112 @@
       }
     }
 
-    // Load songs from audio directory
-    async function loadSongs() {
-      const songFiles = ['1.mp3', '2.mp3', '3.mp3'];
-      songs = [];
-
-      for (let i = 0; i < songFiles.length; i++) {
-        const file = songFiles[i];
-        const audio = new Audio(`audio/${file}`);
-
-        // Create a promise to load metadata
-        await new Promise((resolve) => {
-          audio.addEventListener('loadedmetadata', () => {
-            songs.push({
-              title: `Track ${i + 1}`,
-              artist: `Artist ${i + 1}`,
-              file: `audio/${file}`,
-              duration: audio.duration,
-              cover: generateCover(i)
-            });
-            resolve();
-          });
-          audio.addEventListener('error', () => {
-            console.error(`Failed to load ${file}`);
-            resolve(); // Resolve anyway to continue
-          });
-        });
-      }
-
-      renderSongList();
-      if (songs.length > 0) {
-        updatePlayerInfo();
-      }
-    }
-
     // Generate colorful cover
     function generateCover(index) {
       const colors = [
         ['#ff006e', '#8338ec'],
         ['#00f3ff', '#0066ff'],
         ['#ff6d00', '#ff0066'],
+        ['#8338ec', '#00f3ff'],
+        ['#ff0066', '#ff6d00'],
       ];
       const [c1, c2] = colors[index % colors.length];
       return `data:image/svg+xml;base64,${btoa(`<svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g${index}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${c1};stop-opacity:1" /><stop offset="100%" style="stop-color:${c2};stop-opacity:1" /></linearGradient></defs><rect width="280" height="280" fill="url(#g${index})"/><circle cx="140" cy="140" r="60" fill="white" opacity="0.3"/><circle cx="140" cy="140" r="40" fill="white"/></svg>`)}`;
     }
+
+    // Extract metadata from audio file
+    function extractMetadata(fileName) {
+      const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+      let title = nameWithoutExt;
+      let artist = 'Unknown Artist';
+
+      // Try to parse common formats: "Artist - Title" or "Title - Artist"
+      if (nameWithoutExt.includes(' - ')) {
+        const parts = nameWithoutExt.split(' - ');
+        artist = parts[0].trim();
+        title = parts[1].trim();
+      }
+
+      return { title, artist };
+    }
+
+    // Add files to library
+    async function addFilesToLibrary(files) {
+      const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+
+      if (audioFiles.length === 0) {
+        console.log('No audio files found');
+        return;
+      }
+
+      for (const file of audioFiles) {
+        const url = URL.createObjectURL(file);
+        const audio = new Audio(url);
+        const metadata = extractMetadata(file.name);
+
+        await new Promise((resolve) => {
+          audio.addEventListener('loadedmetadata', () => {
+            songs.push({
+              title: metadata.title,
+              artist: metadata.artist,
+              file: url,
+              fileName: file.name,
+              duration: audio.duration,
+              cover: generateCover(songs.length)
+            });
+            resolve();
+          });
+          audio.addEventListener('error', () => {
+            console.error(`Failed to load ${file.name}`);
+            resolve();
+          });
+        });
+      }
+
+      renderSongList();
+      if (songs.length > 0 && currentSongIndex === 0) {
+        updatePlayerInfo();
+      }
+    }
+
+    // File upload handlers
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    folderBtn.addEventListener('click', () => {
+      folderInput.click();
+    });
+
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      addFilesToLibrary(e.target.files);
+      e.target.value = ''; // Reset input
+    });
+
+    folderInput.addEventListener('change', (e) => {
+      addFilesToLibrary(e.target.files);
+      e.target.value = ''; // Reset input
+    });
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      addFilesToLibrary(e.dataTransfer.files);
+    });
 
     // Format time
     function formatTime(time) {
@@ -965,6 +1172,7 @@
 
     // Play song
     function playSong() {
+      if (songs.length === 0) return;
       setupAudioAnalysis();
       audioPlayer.play().then(() => {
         isPlaying = true;
@@ -974,7 +1182,6 @@
         updateVisualizer();
       }).catch(e => {
         console.error('Play failed:', e);
-        // Show error to user if needed
       });
     }
 
@@ -989,6 +1196,7 @@
 
     // Toggle play/pause
     playPauseBtn.addEventListener('click', () => {
+      if (songs.length === 0) return;
       if (isPlaying) {
         pauseSong();
       } else {
@@ -998,6 +1206,7 @@
 
     // Previous song
     prevBtn.addEventListener('click', () => {
+      if (songs.length === 0) return;
       currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
       updatePlayerInfo();
       if (isPlaying) playSong();
@@ -1005,6 +1214,7 @@
 
     // Next song
     nextBtn.addEventListener('click', () => {
+      if (songs.length === 0) return;
       if (isShuffled) {
         currentSongIndex = Math.floor(Math.random() * songs.length);
       } else {
@@ -1150,15 +1360,66 @@
       }
     }
 
+    // Delete song from library
+    function deleteSong(index) {
+      // If currently playing song is being deleted
+      if (index === currentSongIndex) {
+        pauseSong();
+        if (songs.length > 1) {
+          // Play next song if available
+          currentSongIndex = index < songs.length - 1 ? index : 0;
+          updatePlayerInfo();
+        } else {
+          // No songs left
+          currentSongIndex = 0;
+          songTitle.textContent = 'No songs loaded';
+          artistName.textContent = 'Add songs to get started';
+        }
+      } else if (index < currentSongIndex) {
+        // Adjust current index if a song before it was deleted
+        currentSongIndex--;
+      }
+
+      // Revoke object URL to free memory
+      URL.revokeObjectURL(songs[index].file);
+
+      // Remove song from array
+      songs.splice(index, 1);
+
+      renderSongList();
+    }
+
     // Render song list
     function renderSongList() {
       const query = searchInput.value.toLowerCase();
       const filtered = songs.filter(song =>
         song.title.toLowerCase().includes(query) ||
-        song.artist.toLowerCase().includes(query)
+        song.artist.toLowerCase().includes(query) ||
+        song.fileName.toLowerCase().includes(query)
       );
 
-      songCount.textContent = `${filtered.length} song${filtered.length !== 1 ? 's' : ''}`;
+      songCount.textContent = `${songs.length} song${songs.length !== 1 ? 's' : ''}`;
+
+      if (filtered.length === 0) {
+        if (songs.length === 0) {
+          songList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-music"></i>
+              <p>No songs in library</p>
+              <p style="font-size: 14px;">Add audio files to get started</p>
+            </div>
+          `;
+        } else {
+          songList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-search"></i>
+              <p>No songs found</p>
+              <p style="font-size: 14px;">Try a different search term</p>
+            </div>
+          `;
+        }
+        return;
+      }
 
       songList.innerHTML = filtered.map((song, idx) => {
         const originalIdx = songs.indexOf(song);
@@ -1170,6 +1431,9 @@
               <div class="song-item-artist">${song.artist}</div>
             </div>
             <div class="song-item-duration">${formatTime(song.duration)}</div>
+            <button class="song-item-delete" onclick="event.stopPropagation(); deleteSong(${originalIdx})">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         `;
       }).join('');
@@ -1190,6 +1454,9 @@
         item.classList.toggle('active', idx === currentSongIndex);
       });
     }
+
+    // Make deleteSong available globally
+    window.deleteSong = deleteSong;
 
     // Search
     searchInput.addEventListener('input', renderSongList);
@@ -1234,7 +1501,7 @@
 
     // Initialize
     initVisualizer();
-    loadSongs();
+    renderSongList();
     drawProgressTrail(0);
     drawVolumeTrail(100);
   </script>
