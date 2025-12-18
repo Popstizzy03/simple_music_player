@@ -785,3 +785,87 @@
         font-size: 16px;
         margin-bottom: 5px;
     }
+    @media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    .header {
+        margin-bottom: 20px;
+    }
+
+    .logo h1 {
+        font-size: 22px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .player-card, .library-card {
+        padding: 20px;
+        border-radius: 20px;
+    }
+
+    .player-content {
+        gap: 20px;
+    }
+
+    .album-cover {
+        width: 150px;
+        height: 150px;
+    }
+
+    .song-title {
+        font-size: 22px;
+    }
+
+    .artist-name {
+        font-size: 16px;
+    }
+
+    .controls {
+        gap: 10px;
+    }
+
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+
+    .play-pause-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+
+    .volume-container {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .volume-wrapper {
+        width: 100%;
+    }
+
+    .upload-buttons {
+        flex-direction: column;
+    }
+
+    .shortcuts {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .shortcut {
+        font-size: 12px;
+    }
+
+    .shortcut kbd {
+        padding: 4px 8px;
+    }
+}
